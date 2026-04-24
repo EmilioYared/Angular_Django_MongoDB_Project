@@ -1,0 +1,60 @@
+# ProjectNest
+
+Angular frontend + Django backend for an isolated-project knowledge helper.
+
+## Core architecture
+
+- Every project is its own workspace.
+- Documents, chunks, embeddings, semantic queries, members, and conversations all carry `project_id`.
+- Semantic search always filters by `project_id` before scoring.
+- Deleting a document removes its chunks and embeddings.
+- Deleting a project removes nested documents, chunks, embeddings, query logs, members, and conversations.
+
+## Stack
+
+- Frontend: Angular standalone app with routing and reactive forms
+- Backend: Django API with JWT auth and MongoDB Atlas via `pymongo`
+- Semantic search: chunk embeddings stored in MongoDB and scored per project
+- File handling: local media storage for profile images, project covers, and uploaded files
+
+## Local run
+
+Backend:
+
+```powershell
+.venv\Scripts\python backend\manage.py runserver
+```
+
+Frontend:
+
+```powershell
+cd frontend
+npm start
+```
+
+Frontend default URL: `http://localhost:4200`
+
+Backend default URL: `http://localhost:8000`
+
+## Verified
+
+- `python backend/manage.py check`
+- `npm run build` inside `frontend`
+- Backend smoke path:
+  - health
+  - register
+  - create project
+  - project-scoped semantic search
+
+## Key API routes
+
+- `POST /api/auth/register/`
+- `POST /api/auth/login/`
+- `GET|POST /api/profile/`
+- `GET|POST /api/projects/`
+- `GET|POST|DELETE /api/projects/:projectId/`
+- `GET|POST /api/projects/:projectId/members/`
+- `GET|POST /api/projects/:projectId/tags/`
+- `GET|POST /api/projects/:projectId/documents/`
+- `POST /api/projects/:projectId/semantic-search/`
+- `GET /api/projects/:projectId/query-history/`

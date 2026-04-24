@@ -1,0 +1,26 @@
+<div class="app-shell">
+  <header class="topbar">
+    <a class="brand" routerLink="/projects">
+      <span class="brand-mark">PN</span>
+      <span>
+        <strong>ProjectNest</strong>
+        <small>Isolated Project Knowledge Helper</small>
+      </span>
+    </a>
+
+    <nav class="nav-links">
+      @if (session.isAuthenticated()) {
+        <a routerLink="/projects" routerLinkActive="active">Projects</a>
+        <a routerLink="/profile" routerLinkActive="active">Profile</a>
+        <button type="button" class="ghost-button" (click)="logout()">Logout</button>
+      } @else {
+        <a routerLink="/login" routerLinkActive="active">Login</a>
+        <a routerLink="/register" routerLinkActive="active">Register</a>
+      }
+    </nav>
+  </header>
+
+  <main class="page-shell">
+    <router-outlet />
+  </main>
+</div>
