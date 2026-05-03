@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -54,7 +54,7 @@ import { ProjectNestApiService } from '../../core/projectnest-api.service';
     </section>
   `
 })
-export class DocumentUploadPageComponent {
+export class DocumentUploadPageComponent implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly api = inject(ProjectNestApiService);
   private readonly route = inject(ActivatedRoute);
@@ -69,7 +69,13 @@ export class DocumentUploadPageComponent {
 
   protected documentFile: File | null = null;
   private thumbnailFile: File | null = null;
-  private readonly projectId = this.route.snapshot.paramMap.get('id') ?? '';
+  private projectId = '';
+
+  ngOnInit(): void {
+    this.route.paramMap.subscribe((params) => {
+      this.projectId = params.get('id') ?? '';
+    });
+  }
 
   selectDocument(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -85,7 +91,7 @@ export class DocumentUploadPageComponent {
   }
 
   submit(): void {
-    if (this.form.invalid || !this.documentFile || this.loading()) {
+    if (this.form.invalid || !this.documentFile || this.loading() || !this.projectId) {
       this.form.markAllAsTouched();
       return;
     }

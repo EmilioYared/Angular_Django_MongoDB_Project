@@ -75,21 +75,29 @@ export class ProjectFormPageComponent implements OnInit {
   private projectId: string | null = null;
 
   ngOnInit(): void {
-    this.projectId = this.route.snapshot.paramMap.get('id');
-    if (!this.projectId) {
-      return;
-    }
+    this.route.paramMap.subscribe((params) => {
+      this.projectId = params.get('id');
+      this.editing.set(Boolean(this.projectId));
 
-    this.editing.set(true);
-    this.api.getProject(this.projectId).subscribe({
-      next: ({ project }) => {
-        this.form.patchValue({
-          title: project.title,
-          description: project.description,
-          visibility_status: project.visibility_status
+      if (!this.projectId) {
+        this.form.reset({
+          title: '',
+          description: '',
+          visibility_status: 'private'
         });
-      },
-      error: (error: unknown) => this.error.set(getErrorMessage(error))
+        return;
+      }
+
+      this.api.getProject(this.projectId).subscribe({
+        next: ({ project }) => {
+          this.form.patchValue({
+            title: project.title,
+            description: project.description,
+            visibility_status: project.visibility_status
+          });
+        },
+        error: (error: unknown) => this.error.set(getErrorMessage(error))
+      });
     });
   }
 

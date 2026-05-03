@@ -57,6 +57,10 @@ import { ProjectNestApiService } from '../../core/projectnest-api.service';
       <div class="list-grid">
         @for (project of projects(); track project.id) {
           <article class="card">
+            @if (project.cover_image_url) {
+              <img class="project-cover" [src]="project.cover_image_url" [alt]="project.title + ' cover image'" />
+            }
+
             <div class="meta-row">
               <span class="badge info">{{ project.access_role }}</span>
               <span>{{ project.created_at | date: 'mediumDate' }}</span>

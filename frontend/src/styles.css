@@ -219,6 +219,28 @@ button {
   color: #334155;
 }
 
+.project-cover,
+.document-thumbnail {
+  width: 100%;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  object-fit: cover;
+}
+
+.project-cover {
+  height: 10rem;
+  margin-bottom: 1rem;
+}
+
+.project-cover.hero-cover {
+  height: 16rem;
+}
+
+.document-thumbnail {
+  max-width: 12rem;
+  height: 8rem;
+}
+
 .score-pill {
   display: inline-block;
   padding: 0.25rem 0.6rem;

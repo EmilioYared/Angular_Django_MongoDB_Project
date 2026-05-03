@@ -124,18 +124,24 @@ export class AssistantPageComponent implements OnInit {
     top_k: [5]
   });
 
-  private readonly projectId = this.route.snapshot.paramMap.get('id') ?? '';
+  private projectId = '';
 
   ngOnInit(): void {
-    this.api.getProject(this.projectId).subscribe({
-      next: ({ project }) => this.project.set(project),
-      error: (error: unknown) => this.error.set(getErrorMessage(error))
+    this.route.paramMap.subscribe((params) => {
+      this.projectId = params.get('id') ?? '';
+      this.project.set(null);
+      this.matches.set([]);
+      this.answer.set('');
+      this.api.getProject(this.projectId).subscribe({
+        next: ({ project }) => this.project.set(project),
+        error: (error: unknown) => this.error.set(getErrorMessage(error))
+      });
+      this.refreshHistory();
     });
-    this.refreshHistory();
   }
 
   submit(): void {
-    if (this.form.invalid || this.loading()) {
+    if (this.form.invalid || this.loading() || !this.projectId) {
       this.form.markAllAsTouched();
       return;
     }
@@ -160,6 +166,10 @@ export class AssistantPageComponent implements OnInit {
   }
 
   private refreshHistory(): void {
+    if (!this.projectId) {
+      return;
+    }
+
     this.api.queryHistory(this.projectId).subscribe({
       next: ({ queries }) => this.history.set(queries),
       error: (error: unknown) => this.error.set(getErrorMessage(error))

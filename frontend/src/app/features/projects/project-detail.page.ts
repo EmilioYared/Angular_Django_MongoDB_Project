@@ -15,6 +15,10 @@ import { ProjectNestApiService } from '../../core/projectnest-api.service';
     <section class="page-section">
       @if (project(); as currentProject) {
         <div class="hero-card">
+          @if (currentProject.cover_image_url) {
+            <img class="project-cover hero-cover" [src]="currentProject.cover_image_url" [alt]="currentProject.title + ' cover image'" />
+          }
+
           <div class="title-row">
             <div class="stack">
               <div class="badge-row">
@@ -51,7 +55,7 @@ import { ProjectNestApiService } from '../../core/projectnest-api.service';
                   <span class="badge">
                     {{ tag.name }}
                     @if (currentProject.access_role === 'owner') {
-                      <button class="ghost-button" type="button" (click)="removeTag(tag.id)">×</button>
+                      <button class="ghost-button" type="button" (click)="removeTag(tag.id)">x</button>
                     }
                   </span>
                 }
@@ -145,6 +149,10 @@ import { ProjectNestApiService } from '../../core/projectnest-api.service';
               @for (document of documents(); track document.id) {
                 <article class="card">
                   <div class="title-row">
+                    @if (document.thumbnail_image_url) {
+                      <img class="document-thumbnail" [src]="document.thumbnail_image_url" [alt]="document.title + ' thumbnail image'" />
+                    }
+
                     <div class="stack">
                       <h3>{{ document.title }}</h3>
                       <div class="meta-row">
@@ -198,13 +206,21 @@ export class ProjectDetailPageComponent implements OnInit {
   private projectId = '';
 
   ngOnInit(): void {
-    this.projectId = this.route.snapshot.paramMap.get('id') ?? '';
-    this.loadProject();
-    this.loadDocuments();
+    this.route.paramMap.subscribe((params) => {
+      this.projectId = params.get('id') ?? '';
+      this.project.set(null);
+      this.documents.set([]);
+      this.loadProject();
+      this.loadDocuments();
+    });
     this.documentFilters.valueChanges.subscribe(() => this.loadDocuments());
   }
 
   loadProject(): void {
+    if (!this.projectId) {
+      return;
+    }
+
     this.api.getProject(this.projectId).subscribe({
       next: ({ project }) => this.project.set(project),
       error: (error: unknown) => this.error.set(getErrorMessage(error))
@@ -212,6 +228,10 @@ export class ProjectDetailPageComponent implements OnInit {
   }
 
   loadDocuments(): void {
+    if (!this.projectId) {
+      return;
+    }
+
     const { q, order } = this.documentFilters.getRawValue();
     this.api.listDocuments(this.projectId, q, order).subscribe({
       next: ({ documents }) => this.documents.set(documents),
