@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import re
 from datetime import datetime, timezone
+from pathlib import Path
 
 from bson import ObjectId
-from django.http import HttpRequest
+from django.http import FileResponse, HttpRequest
+from gridfs.errors import NoFile
 
 from api.auth import create_access_token, get_authenticated_user, hash_password, normalize_email, verify_password
 from api.db import get_db, to_object_id
@@ -73,6 +75,26 @@ def _get_owner_project(request: HttpRequest, project_id: str) -> tuple[dict, dic
     return user, project
 
 
+def _require_file_access(request: HttpRequest, file_metadata: dict | None) -> dict:
+    user = get_authenticated_user(request)
+    metadata = file_metadata or {}
+    project_id = metadata.get("project_id")
+    user_id = metadata.get("user_id")
+
+    if project_id:
+        project = get_db().projects.find_one({"_id": to_object_id(project_id, "project_id")})
+        if not project or not _project_access_role(user["_id"], project):
+            raise ApiError("You do not have access to this file.", 403, "forbidden")
+        return user
+
+    if user_id:
+        if user["_id"] != to_object_id(user_id, "user_id"):
+            raise ApiError("You do not have access to this file.", 403, "forbidden")
+        return user
+
+    raise ApiError("File access metadata is missing.", 403, "forbidden")
+
+
 def _load_project_tags(project: dict) -> list[dict]:
     tag_ids = project.get("tag_ids", [])
     if not tag_ids:
@@ -104,6 +126,26 @@ def health(request: HttpRequest):
             "semantic_search": "project-scoped",
         }
     )
+
+
+@api_view
+def file_download(request: HttpRequest, file_id: str):
+    require_methods(request, ["GET"])
+    from api.storage import get_gridfs
+
+    if not ObjectId.is_valid(file_id):
+        raise ApiError("Invalid file id.", 400, "invalid_file_id")
+
+    try:
+        grid_file = get_gridfs().get(to_object_id(file_id, "file_id"))
+    except NoFile as exc:
+        raise ApiError("File was not found.", 404, "file_not_found") from exc
+
+    metadata = grid_file.metadata or {}
+    _require_file_access(request, metadata)
+    filename = metadata.get("original_filename") or Path(grid_file.filename or "attachment").name
+    content_type = getattr(grid_file, "content_type", None) or "application/octet-stream"
+    return FileResponse(grid_file, content_type=content_type, as_attachment=False, filename=filename)
 
 
 @api_view
@@ -205,7 +247,11 @@ def profile(request: HttpRequest):
         from api.storage import delete_media_file
 
         delete_media_file(profile_doc.get("profile_image_path"))
-        profile_doc["profile_image_path"] = save_uploaded_file(request.FILES["profile_image"], "profiles")
+        profile_doc["profile_image_path"] = save_uploaded_file(
+            request.FILES["profile_image"],
+            "profiles",
+            {"user_id": str(user["_id"]), "scope": "profile-image"},
+        )
 
     if updates:
         updates["updated_at"] = _now()
@@ -261,10 +307,6 @@ def projects(request: HttpRequest):
     title = _require_text(data, "title")
     description = str(data.get("description", "")).strip()
     visibility_status = str(data.get("visibility_status", "private")).strip() or "private"
-    cover_image_path = None
-    if request.FILES.get("cover_image"):
-        cover_image_path = save_uploaded_file(request.FILES["cover_image"], "project-covers")
-
     now = _now()
     project = {
         "owner_id": user["_id"],
@@ -272,13 +314,23 @@ def projects(request: HttpRequest):
         "title": title,
         "description": description,
         "visibility_status": visibility_status,
-        "cover_image_path": cover_image_path,
+        "cover_image_path": None,
         "tag_ids": [],
         "created_at": now,
         "updated_at": now,
     }
     project_id = database.projects.insert_one(project).inserted_id
     project["_id"] = project_id
+
+    if request.FILES.get("cover_image"):
+        cover_image_path = save_uploaded_file(
+            request.FILES["cover_image"],
+            "project-covers",
+            {"project_id": str(project_id), "user_id": str(user["_id"]), "scope": "project-cover"},
+        )
+        database.projects.update_one({"_id": project_id}, {"$set": {"cover_image_path": cover_image_path}})
+        project["cover_image_path"] = cover_image_path
+
     return json_response({"project": serialize_project(project, request, [], 0, "owner")}, status=201)
 
 
@@ -305,7 +357,11 @@ def project_detail(request: HttpRequest, project_id: str):
             from api.storage import delete_media_file
 
             delete_media_file(project.get("cover_image_path"))
-            updates["cover_image_path"] = save_uploaded_file(request.FILES["cover_image"], "project-covers")
+            updates["cover_image_path"] = save_uploaded_file(
+                request.FILES["cover_image"],
+                "project-covers",
+                {"project_id": str(project["_id"]), "user_id": str(project["owner_id"]), "scope": "project-cover"},
+            )
 
         database.projects.update_one({"_id": project["_id"]}, {"$set": updates})
         project.update(updates)
@@ -429,8 +485,21 @@ def documents(request: HttpRequest, project_id: str):
     extension = uploaded_file.name.rsplit(".", 1)[-1].lower() if "." in uploaded_file.name else ""
     document_type = str(data.get("document_type", extension or "file")).strip() or "file"
 
-    file_path = save_uploaded_file(uploaded_file, "documents")
-    thumbnail_path = save_uploaded_file(thumbnail_image, "document-thumbnails") if thumbnail_image else None
+    document_metadata = {"project_id": str(project["_id"]), "user_id": str(user["_id"])}
+    file_path = save_uploaded_file(
+        uploaded_file,
+        "documents",
+        {**document_metadata, "scope": "document-file"},
+    )
+    thumbnail_path = (
+        save_uploaded_file(
+            thumbnail_image,
+            "document-thumbnails",
+            {**document_metadata, "scope": "document-thumbnail"},
+        )
+        if thumbnail_image
+        else None
+    )
     now = _now()
     document = {
         "project_id": project["_id"],
@@ -484,7 +553,15 @@ def document_detail(request: HttpRequest, project_id: str, document_id: str):
             from api.storage import delete_media_file
 
             delete_media_file(document.get("thumbnail_image_path"))
-            updates["thumbnail_image_path"] = save_uploaded_file(request.FILES["thumbnail_image"], "document-thumbnails")
+            updates["thumbnail_image_path"] = save_uploaded_file(
+                request.FILES["thumbnail_image"],
+                "document-thumbnails",
+                {
+                    "project_id": str(project["_id"]),
+                    "user_id": str(document["uploaded_by_user_id"]),
+                    "scope": "document-thumbnail",
+                },
+            )
         database.documents.update_one({"_id": document["_id"]}, {"$set": updates})
         document.update(updates)
         return json_response({"document": serialize_document(document, request)})

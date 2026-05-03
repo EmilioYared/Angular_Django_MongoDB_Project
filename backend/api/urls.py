@@ -4,6 +4,7 @@ from api import views
 
 urlpatterns = [
     path("health/", views.health),
+    path("files/<str:file_id>/", views.file_download),
     path("auth/register/", views.register),
     path("auth/login/", views.login),
     path("profile/", views.profile),

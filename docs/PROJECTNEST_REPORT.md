@@ -37,7 +37,7 @@ The project uses three connected layers:
 | Backend | Django | REST-style API, authentication, validation, file handling, project access control |
 | Database | MongoDB Atlas with PyMongo | Stores users, projects, documents, chunks, embeddings, tags, members, and logs |
 
-The Angular frontend communicates with the Django backend through HTTP requests. The Django backend connects to MongoDB Atlas using PyMongo. Uploaded files are stored in the local `media` folder, while file metadata is stored in MongoDB.
+The Angular frontend communicates with the Django backend through HTTP requests. The Django backend connects to MongoDB Atlas using PyMongo. Uploaded PDFs and images are stored in MongoDB Atlas using GridFS, while normal application metadata is stored in MongoDB collections.
 
 The semantic search architecture is:
 
@@ -56,6 +56,8 @@ This prevents data from one project appearing in another project.
 
 The backend uses Django as the web framework and PyMongo as the MongoDB driver. The MongoDB connection is implemented in `backend/api/db.py` using `MongoClient`. The function `get_db()` returns the selected MongoDB Atlas database, and `ensure_indexes()` creates indexes for important fields such as emails, usernames, project IDs, document IDs, and semantic search records.
 
+PDFs and images are stored with MongoDB GridFS. GridFS is used because MongoDB documents have a size limit, while files can be larger than normal metadata records. The application saves files into the GridFS `fs.files` and `fs.chunks` collections, then stores a reference such as `gridfs:<file_id>` in the related collection.
+
 Because MongoDB is document-based, the project does not define fixed Django ORM model classes. Instead, data is inserted as Python dictionaries. The fields and their types are created implicitly from Python values when the dictionaries are saved to MongoDB.
 
 Example:
@@ -65,6 +67,7 @@ Example:
 - MongoDB `ObjectId` values are used as primary keys and reference IDs.
 - Lists are used for arrays such as project tag IDs.
 - Embedding vectors are stored as arrays of numbers.
+- File references are stored as strings pointing to GridFS file IDs.
 
 Even though the schema is flexible, the application still enforces structure through the backend views, serializers, indexes, and access-control functions. For example, every document must have a `project_id`, every chunk must have a `document_id` and `project_id`, and every embedding must have a `chunk_id`, `document_id`, and `project_id`.
 
@@ -156,6 +159,7 @@ Angular concepts used:
 | `/api/projects/{project_id}/conversations/` | GET, POST | List/create conversations |
 | `/api/projects/{project_id}/conversations/{conversation_id}/` | GET, DELETE | View/delete conversation |
 | `/api/projects/{project_id}/conversations/{conversation_id}/messages/` | POST | Add message |
+| `/api/files/{file_id}/` | GET | Authenticated file streaming from MongoDB GridFS |
 
 ## 9. Testing In The Project
 

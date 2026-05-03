@@ -37,6 +37,10 @@ def create_access_token(user: dict) -> str:
 
 
 def get_bearer_token(request: HttpRequest) -> str:
+    query_token = request.GET.get("token", "").strip()
+    if query_token:
+        return query_token
+
     header = request.headers.get("Authorization", "")
     prefix = "Bearer "
     if not header.startswith(prefix):

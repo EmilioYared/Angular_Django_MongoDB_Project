@@ -1,20 +1,21 @@
 from __future__ import annotations
 
+from io import BytesIO
 from pathlib import Path
 
 from pypdf import PdfReader
 
 
-def extract_text_from_path(path: Path) -> str:
-    suffix = path.suffix.lower()
+def extract_text_from_file(filename: str, content: bytes) -> str:
+    suffix = Path(filename).suffix.lower()
     if suffix == ".pdf":
-        reader = PdfReader(str(path))
+        reader = PdfReader(BytesIO(content))
         parts: list[str] = []
         for page in reader.pages:
             parts.append(page.extract_text() or "")
         return "\n".join(parts).strip()
 
-    return path.read_text(encoding="utf-8", errors="ignore").strip()
+    return content.decode("utf-8", errors="ignore").strip()
 
 
 def normalize_text(text: str) -> str:

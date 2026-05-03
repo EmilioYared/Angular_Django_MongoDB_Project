@@ -245,11 +245,11 @@ def rank_project_matches(project_id: ObjectId, query: str, top_k: int) -> list[d
 
 def rebuild_document_embeddings(document: dict) -> None:
     database = get_db()
-    from api.documents import chunk_text, extract_text_from_path
-    from api.storage import absolute_media_path
+    from api.documents import chunk_text, extract_text_from_file
+    from api.storage import read_stored_file
 
-    file_path = absolute_media_path(document["file_path"])
-    extracted_text = extract_text_from_path(file_path)
+    filename, content = read_stored_file(document["file_path"])
+    extracted_text = extract_text_from_file(filename, content)
     chunks = chunk_text(extracted_text)
     if not chunks and extracted_text:
         chunks = [extracted_text]

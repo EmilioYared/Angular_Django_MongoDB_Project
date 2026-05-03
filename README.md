@@ -15,7 +15,7 @@ Angular frontend + Django backend for an isolated-project knowledge helper.
 - Frontend: Angular standalone app with routing and reactive forms
 - Backend: Django API with JWT auth and MongoDB Atlas via `pymongo`
 - Semantic search: chunk embeddings stored in MongoDB and scored per project
-- File handling: local media storage for profile images, project covers, and uploaded files
+- File handling: MongoDB Atlas GridFS storage for profile images, project covers, thumbnails, and uploaded files
 
 ## Local run
 
@@ -58,3 +58,4 @@ Backend default URL: `http://localhost:8000`
 - `GET|POST /api/projects/:projectId/documents/`
 - `POST /api/projects/:projectId/semantic-search/`
 - `GET /api/projects/:projectId/query-history/`
+- `GET /api/files/:fileId/`

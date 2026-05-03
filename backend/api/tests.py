@@ -15,6 +15,7 @@ from api.semantic import (
     local_hash_embedding,
     rank_project_matches,
 )
+from api.storage import is_gridfs_reference
 
 
 class FakeCollection:
@@ -63,6 +64,12 @@ class SemanticUtilityTests(SimpleTestCase):
         answer = generate_grounded_answer("What is this?", [])
 
         self.assertIn("could not find enough matching content", answer)
+
+
+class StorageReferenceTests(SimpleTestCase):
+    def test_gridfs_reference_detection(self):
+        self.assertTrue(is_gridfs_reference("gridfs:64d2f1f2f1f2f1f2f1f2f1f2"))
+        self.assertFalse(is_gridfs_reference("documents/example.pdf"))
 
 
 class SemanticIsolationTests(SimpleTestCase):
