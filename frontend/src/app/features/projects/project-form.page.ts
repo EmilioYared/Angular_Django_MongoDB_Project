@@ -34,14 +34,6 @@ import { ProjectNestApiService } from '../../core/projectnest-api.service';
           </label>
 
           <label>
-            Visibility
-            <select formControlName="visibility_status">
-              <option value="private">Private</option>
-              <option value="team">Team</option>
-            </select>
-          </label>
-
-          <label>
             Cover image
             <input type="file" accept="image/*" (change)="selectCover($event)" />
           </label>
@@ -67,8 +59,7 @@ export class ProjectFormPageComponent implements OnInit {
   readonly editing = signal(false);
   readonly form = this.fb.group({
     title: ['', [Validators.required, Validators.maxLength(120)]],
-    description: [''],
-    visibility_status: ['private']
+    description: ['']
   });
 
   private selectedCover: File | null = null;
@@ -82,8 +73,7 @@ export class ProjectFormPageComponent implements OnInit {
       if (!this.projectId) {
         this.form.reset({
           title: '',
-          description: '',
-          visibility_status: 'private'
+          description: ''
         });
         return;
       }
@@ -92,8 +82,7 @@ export class ProjectFormPageComponent implements OnInit {
         next: ({ project }) => {
           this.form.patchValue({
             title: project.title,
-            description: project.description,
-            visibility_status: project.visibility_status
+            description: project.description
           });
         },
         error: (error: unknown) => this.error.set(getErrorMessage(error))
@@ -116,7 +105,6 @@ export class ProjectFormPageComponent implements OnInit {
     const values = this.form.getRawValue();
     payload.append('title', values.title);
     payload.append('description', values.description);
-    payload.append('visibility_status', values.visibility_status);
     if (this.selectedCover) {
       payload.append('cover_image', this.selectedCover);
     }

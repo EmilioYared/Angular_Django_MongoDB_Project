@@ -79,7 +79,7 @@ import { ProjectNestApiService } from '../../core/projectnest-api.service';
 
             <div class="meta-row">
               <span>{{ project.members_count }} collaborators</span>
-              <span>{{ project.visibility_status }}</span>
+              <span>{{ project.tags.length }} tags</span>
             </div>
 
             <div class="action-row">

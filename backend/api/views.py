@@ -290,9 +290,12 @@ def projects(request: HttpRequest):
         }
         sort_field, sort_direction = sort_map.get(order, ("created_at", -1))
         member_project_ids = database.project_members.distinct("project_id", {"user_id": user["_id"]})
-        query = {"$or": [{"owner_id": user["_id"]}, {"_id": {"$in": member_project_ids}}]}
+        access_filter = {"$or": [{"owner_id": user["_id"]}, {"_id": {"$in": member_project_ids}}]}
+        query = access_filter
         if q:
-            query["title"] = _regex_filter(q)
+            matching_tag_ids = database.tags.distinct("_id", {"name": _regex_filter(q)})
+            search_filter = {"$or": [{"title": _regex_filter(q)}, {"tag_ids": {"$in": matching_tag_ids}}]}
+            query = {"$and": [access_filter, search_filter]}
 
         project_rows = list(database.projects.find(query).sort(sort_field, sort_direction))
         results = []
