@@ -171,7 +171,6 @@ import { ProjectNestApiService } from '../../core/projectnest-api.service';
                       }
                     </div>
                   </div>
-                  <p class="snippet">{{ document.excerpt || 'No preview available.' }}</p>
                 </article>
               }
             </div>
