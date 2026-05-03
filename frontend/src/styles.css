@@ -219,10 +219,66 @@ button {
   font-weight: 700;
 }
 
+.history-entry {
+  width: 100%;
+  padding: 1rem;
+  text-align: left;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  color: inherit;
+  box-shadow: none;
+}
+
+.history-entry.active {
+  border-color: rgba(29, 78, 216, 0.5);
+  background: var(--primary-soft);
+}
+
 .snippet {
   white-space: pre-wrap;
   line-height: 1.55;
   color: #334155;
+}
+
+.markdown-content {
+  line-height: 1.65;
+  color: #334155;
+}
+
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content p,
+.markdown-content ul,
+.markdown-content ol,
+.markdown-content pre {
+  margin: 0 0 0.85rem;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  padding-left: 1.4rem;
+}
+
+.markdown-content code {
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.35rem;
+  background: rgba(31, 41, 55, 0.08);
+}
+
+.markdown-content pre {
+  overflow-x: auto;
+  padding: 0.9rem;
+  border-radius: 0.8rem;
+  background: #111827;
+  color: #f9fafb;
+}
+
+.markdown-content pre code {
+  padding: 0;
+  background: transparent;
+  color: inherit;
 }
 
 .project-cover,

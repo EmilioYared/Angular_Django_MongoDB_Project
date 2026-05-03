@@ -2,6 +2,7 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { MarkdownComponent } from 'ngx-markdown';
 
 import { ProjectDetail, QueryLog, SemanticMatch } from '../../core/models';
 import { getErrorMessage } from '../../core/error.util';
@@ -10,7 +11,7 @@ import { ProjectNestApiService } from '../../core/projectnest-api.service';
 @Component({
   selector: 'app-assistant-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DatePipe],
+  imports: [CommonModule, ReactiveFormsModule, DatePipe, MarkdownComponent],
   template: `
     <section class="page-section">
       <div class="hero-card">
@@ -58,13 +59,19 @@ import { ProjectNestApiService } from '../../core/projectnest-api.service';
           } @else {
             <div class="stack">
               @for (entry of history(); track entry.id) {
-                <div class="card">
+                <button
+                  class="history-entry"
+                  type="button"
+                  (click)="openHistory(entry)"
+                  [class.active]="selectedHistory()?.id === entry.id"
+                >
                   <strong>{{ entry.query_text }}</strong>
                   <div class="meta-row">
                     <span>top {{ entry.top_k }}</span>
+                    <span>{{ entry.result_count }} matches</span>
                     <span>{{ entry.created_at | date: 'short' }}</span>
                   </div>
-                </div>
+                </button>
               }
             </div>
           }
@@ -76,10 +83,16 @@ import { ProjectNestApiService } from '../../core/projectnest-api.service';
         @if (info()) {
           <div class="empty-state">{{ info() }}</div>
         }
+        @if (currentQuestion()) {
+          <div class="card">
+            <h3>Question</h3>
+            <p class="snippet">{{ currentQuestion() }}</p>
+          </div>
+        }
         @if (answer()) {
           <div class="card">
             <h3>Grounded answer</h3>
-            <p class="snippet">{{ answer() }}</p>
+            <markdown class="markdown-content" [data]="answer()"></markdown>
           </div>
         }
         @if (matches().length === 0) {
@@ -116,8 +129,10 @@ export class AssistantPageComponent implements OnInit {
   readonly error = signal('');
   readonly info = signal('Searching inside this project only.');
   readonly answer = signal('');
+  readonly currentQuestion = signal('');
   readonly matches = signal<SemanticMatch[]>([]);
   readonly history = signal<QueryLog[]>([]);
+  readonly selectedHistory = signal<QueryLog | null>(null);
   readonly project = signal<ProjectDetail | null>(null);
   readonly form = this.fb.group({
     question: ['', [Validators.required, Validators.minLength(4)]],
@@ -132,6 +147,8 @@ export class AssistantPageComponent implements OnInit {
       this.project.set(null);
       this.matches.set([]);
       this.answer.set('');
+      this.currentQuestion.set('');
+      this.selectedHistory.set(null);
       this.api.getProject(this.projectId).subscribe({
         next: ({ project }) => this.project.set(project),
         error: (error: unknown) => this.error.set(getErrorMessage(error))
@@ -150,6 +167,8 @@ export class AssistantPageComponent implements OnInit {
     this.error.set('');
     this.info.set('Searching inside this project only.');
     this.answer.set('');
+    this.currentQuestion.set(this.form.getRawValue().question);
+    this.selectedHistory.set(null);
     this.api.semanticSearch(this.projectId, this.form.getRawValue()).subscribe({
       next: (response) => {
         this.matches.set(response.matches);
@@ -174,5 +193,13 @@ export class AssistantPageComponent implements OnInit {
       next: ({ queries }) => this.history.set(queries),
       error: (error: unknown) => this.error.set(getErrorMessage(error))
     });
+  }
+
+  openHistory(entry: QueryLog): void {
+    this.selectedHistory.set(entry);
+    this.currentQuestion.set(entry.query_text);
+    this.answer.set(entry.generated_answer || 'No answer was stored for this older query.');
+    this.matches.set(entry.matches || []);
+    this.info.set('Showing a saved project-scoped assistant response.');
   }
 }

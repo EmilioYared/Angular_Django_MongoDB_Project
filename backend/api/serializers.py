@@ -119,6 +119,9 @@ def serialize_query_log(row: dict) -> dict:
         "project_id": str(row["project_id"]),
         "user_id": str(row["user_id"]),
         "query_text": row["query_text"],
+        "generated_answer": row.get("generated_answer", ""),
+        "matches": row.get("matches", []),
+        "result_count": row.get("result_count", len(row.get("matches", []))),
         "top_k": row["top_k"],
         "created_at": isoformat(row.get("created_at")),
     }

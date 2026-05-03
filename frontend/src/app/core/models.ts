@@ -106,6 +106,9 @@ export interface QueryLog {
   project_id: string;
   user_id: string;
   query_text: string;
+  generated_answer: string;
+  matches: SemanticMatch[];
+  result_count: number;
   top_k: number;
   created_at: string | null;
 }

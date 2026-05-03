@@ -591,6 +591,9 @@ def semantic_search(request: HttpRequest, project_id: str):
         "project_id": project["_id"],
         "user_id": user["_id"],
         "query_text": question,
+        "generated_answer": generated_answer,
+        "matches": matches,
+        "result_count": len(matches),
         "top_k": top_k,
         "created_at": _now(),
     }

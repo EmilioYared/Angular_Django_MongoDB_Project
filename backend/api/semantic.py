@@ -147,6 +147,7 @@ def generate_grounded_answer(question: str, matches: list[dict]) -> str | None:
                 "Answer only from the supplied project context. "
                 "Do not use outside knowledge. "
                 "If the context is insufficient, say that clearly. "
+                "Format the answer in Markdown. "
                 "Keep the answer concise and mention the source document titles you relied on."
             ),
         },
