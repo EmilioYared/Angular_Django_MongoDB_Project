@@ -36,6 +36,19 @@ Frontend default URL: `http://localhost:4200`
 
 Backend default URL: `http://localhost:8000`
 
+LAN testing with another device:
+
+```powershell
+.venv\Scripts\python backend\manage.py runserver 0.0.0.0:8000
+```
+
+```powershell
+cd frontend
+npm start -- --host 0.0.0.0
+```
+
+Then open `http://YOUR_COMPUTER_IP:4200` on the other device. Do not use `localhost` from the other device, because that points to the other device itself.
+
 ## Verified
 
 - `python backend/manage.py check`

@@ -395,9 +395,12 @@ def project_members(request: HttpRequest, project_id: str):
         raise ApiError("That member is already attached to the project.", 409, "member_exists")
 
     linked_user = database.users.find_one({"email": email})
+    if not linked_user:
+        raise ApiError("That email is not registered. Ask the user to create an account first.", 404, "user_not_registered")
+
     member = {
         "project_id": project["_id"],
-        "user_id": linked_user["_id"] if linked_user else None,
+        "user_id": linked_user["_id"],
         "invited_email": email,
         "role": role,
         "added_at": _now(),

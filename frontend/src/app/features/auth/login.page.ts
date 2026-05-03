@@ -27,11 +27,25 @@ import { SessionService } from '../../core/session.service';
           <label>
             Email
             <input type="email" formControlName="email" placeholder="name@example.com" />
+            @if (form.controls.email.dirty || form.controls.email.touched) {
+              @if (form.controls.email.hasError('required')) {
+                <span class="field-error">Email is required.</span>
+              } @else if (form.controls.email.hasError('email')) {
+                <span class="field-error">Enter a valid email address.</span>
+              }
+            }
           </label>
 
           <label>
             Password
             <input type="password" formControlName="password" placeholder="At least 8 characters" />
+            @if (form.controls.password.dirty || form.controls.password.touched) {
+              @if (form.controls.password.hasError('required')) {
+                <span class="field-error">Password is required.</span>
+              } @else if (form.controls.password.hasError('minlength')) {
+                <span class="field-error">Password must be at least 8 characters.</span>
+              }
+            }
           </label>
 
           <button class="primary-button" type="submit" [disabled]="loading() || form.invalid">

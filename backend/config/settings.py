@@ -9,7 +9,9 @@ load_dotenv(PROJECT_ROOT / ".env.local")
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "projectnest-dev-secret-key-2026-long")
 DEBUG = os.getenv("DEBUG", "true").lower() == "true"
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "testserver"]
+ALLOWED_HOSTS = [host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,testserver").split(",") if host.strip()]
+if DEBUG and "*" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append("*")
 
 INSTALLED_APPS = [
     "corsheaders",
@@ -63,9 +65,14 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 APPEND_SLASH = True
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:4200",
-    "http://127.0.0.1:4200",
+    origin.strip()
+    for origin in os.getenv(
+        "CORS_ALLOWED_ORIGINS",
+        "http://localhost:4200,http://127.0.0.1:4200",
+    ).split(",")
+    if origin.strip()
 ]
+CORS_ALLOW_ALL_ORIGINS = DEBUG and os.getenv("CORS_ALLOW_ALL_ORIGINS", "true").lower() == "true"
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 
 MONGODB_URI = os.getenv("ATLAS_SRV_STRING", "")
